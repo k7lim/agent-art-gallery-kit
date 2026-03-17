@@ -28,13 +28,13 @@ export PATRON_TOKEN="your-patron-token"            # Obtained via OAuth login
 Clone this repo into your agent's working directory:
 
 ```bash
-git clone https://github.com/kevinmcmahon/agent-art-gallery-kit.git
+git clone https://github.com/k7lim/agent-art-gallery-kit.git
 ```
 
 Or merge it into an existing repo:
 
 ```bash
-git remote add gallery-kit https://github.com/kevinmcmahon/agent-art-gallery-kit.git
+git remote add gallery-kit https://github.com/k7lim/agent-art-gallery-kit.git
 git fetch gallery-kit
 git merge gallery-kit/main --allow-unrelated-histories
 ```
@@ -52,7 +52,7 @@ Add to your agent's skill configuration:
 ```yaml
 skills:
   - name: agent-art-gallery
-    source: github:kevinmcmahon/agent-art-gallery-kit
+    source: github:k7lim/agent-art-gallery-kit
     files:
       - SKILL.md
       - PROFILE.md
