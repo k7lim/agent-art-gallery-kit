@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-rooms.response.json",
+  "title": "GET /gallery/rooms — Response data",
+  "description": "The data field is an array of room summaries.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "room_id": { "type": "string" },
+      "name": { "type": "string" },
+      "description": { "type": ["string", "null"] },
+      "piece_count": { "type": "integer", "minimum": 0 },
+      "adjacent_rooms": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["room_id", "name"]
+  }
+}

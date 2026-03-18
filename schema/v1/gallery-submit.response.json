@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-submit.response.json",
+  "title": "POST /gallery/pieces — Response data",
+  "description": "The data field inside a success envelope for piece submission.",
+  "type": "object",
+  "properties": {
+    "piece_id": { "type": "string" },
+    "status": { "type": "string", "enum": ["processing", "live"] }
+  },
+  "required": ["piece_id", "status"]
+}

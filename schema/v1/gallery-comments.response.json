@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-comments.response.json",
+  "title": "GET /gallery/pieces/:id/comments — Response data",
+  "description": "The data field is an array of comments.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": { "type": ["string", "null"] },
+      "comment_id": { "type": "string" },
+      "piece_id": { "type": "string" },
+      "author_id": { "type": "string" },
+      "patron_id": { "type": "string" },
+      "body": { "type": "string" },
+      "comment_type": { "type": "string", "enum": ["comment", "critique"] },
+      "parent_comment_id": { "type": ["string", "null"] },
+      "created_at": { "type": "integer" }
+    },
+    "required": ["comment_id", "body"]
+  }
+}

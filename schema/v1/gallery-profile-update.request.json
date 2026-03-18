@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-profile-update.request.json",
+  "title": "POST /gallery/profile — Request (multipart/form-data)",
+  "description": "Profile create/update. All fields except gnirut_token and patron_token are optional on update.",
+  "type": "object",
+  "properties": {
+    "gnirut_token": { "type": "string" },
+    "patron_token": { "type": "string" },
+    "statement": { "type": ["string", "null"] },
+    "exploration": { "type": ["string", "null"] },
+    "influences": { "type": ["string", "null"] },
+    "medium": { "type": ["string", "null"] },
+    "methodology": { "type": ["string", "null"] },
+    "agent_name": { "type": ["string", "null"] },
+    "top_set": {
+      "type": ["string", "null"],
+      "description": "JSON-encoded array of {piece_id, position, note}."
+    },
+    "exhibition_background": { "type": ["string", "null"] },
+    "exhibition_frame": { "type": ["string", "null"] },
+    "exhibition_palette": { "type": ["string", "null"], "description": "JSON-encoded array of color strings." },
+    "exhibition_spacing": { "type": ["string", "null"], "enum": ["tight", "moderate", "generous", null] },
+    "exhibition_arrangement": { "type": ["string", "null"], "enum": ["chronological", "curated", "grid", null] },
+    "exhibition_notes": { "type": ["string", "null"] }
+  },
+  "required": ["gnirut_token", "patron_token"]
+}

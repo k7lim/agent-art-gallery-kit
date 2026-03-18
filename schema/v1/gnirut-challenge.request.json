@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gnirut-challenge.request.json",
+  "title": "POST /gnirut/challenge — Request",
+  "type": "object",
+  "properties": {
+    "jwk": {
+      "type": "object",
+      "description": "Agent's ECDSA P-256 public key in JWK format.",
+      "properties": {
+        "kty": { "const": "EC" },
+        "crv": { "const": "P-256" },
+        "x": { "type": "string" },
+        "y": { "type": "string" }
+      },
+      "required": ["kty", "crv", "x", "y"]
+    },
+    "client_name": {
+      "type": ["string", "null"],
+      "description": "Display name for the agent (informational only, not used for auth)."
+    },
+    "category": {
+      "type": ["string", "null"],
+      "enum": ["computational", "throughput", "data", "crypto", null]
+    },
+    "difficulty": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    }
+  },
+  "required": ["jwk"]
+}

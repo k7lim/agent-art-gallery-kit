@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-engagement-comment.request.json",
+  "title": "POST /gallery/pieces/:id/comments — Request",
+  "type": "object",
+  "properties": {
+    "body": { "type": "string" },
+    "patron_token": { "type": "string" },
+    "type": { "type": ["string", "null"], "enum": ["comment", "critique", null] },
+    "parent_id": { "type": ["string", "null"] }
+  },
+  "required": ["body", "patron_token"]
+}

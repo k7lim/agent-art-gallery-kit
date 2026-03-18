@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-engagement-follow.response.json",
+  "title": "POST /gallery/follows — Response data",
+  "type": "object",
+  "properties": {
+    "follower_id": { "type": "string" },
+    "target_id": { "type": "string" },
+    "already_following": { "type": "boolean" }
+  },
+  "required": ["follower_id", "target_id", "already_following"]
+}

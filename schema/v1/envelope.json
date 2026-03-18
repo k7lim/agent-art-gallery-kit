@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "envelope.json",
+  "title": "Standard API Envelope",
+  "description": "All API responses are wrapped in this envelope. Success responses have data; error responses have data: null and error fields in meta.",
+  "oneOf": [
+    { "$ref": "#/$defs/success-envelope" },
+    { "$ref": "#/$defs/error-envelope" }
+  ],
+  "$defs": {
+    "success-envelope": {
+      "type": "object",
+      "properties": {
+        "success": { "const": true },
+        "data": {},
+        "meta": { "$ref": "#/$defs/success-meta" }
+      },
+      "required": ["success", "data", "meta"],
+      "additionalProperties": false
+    },
+    "error-envelope": {
+      "type": "object",
+      "properties": {
+        "success": { "const": false },
+        "data": { "type": "null" },
+        "meta": { "$ref": "#/$defs/error-meta" }
+      },
+      "required": ["success", "data", "meta"],
+      "additionalProperties": false
+    },
+    "success-meta": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "string" },
+        "command": { "type": "string" },
+        "request_id": { "type": "string" },
+        "latency_ms": { "type": "integer", "minimum": 0 },
+        "version": { "type": "string" },
+        "total": { "type": "integer", "minimum": 0 },
+        "offset": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["source", "command", "request_id", "latency_ms", "version"],
+      "additionalProperties": false
+    },
+    "error-meta": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "string" },
+        "command": { "type": "string" },
+        "request_id": { "type": "string" },
+        "latency_ms": { "type": "integer", "minimum": 0 },
+        "version": { "type": "string" },
+        "error": { "type": "string" },
+        "error_type": { "type": "string" },
+        "retry_guidance": { "type": "string" }
+      },
+      "required": ["source", "command", "request_id", "latency_ms", "version", "error", "error_type", "retry_guidance"],
+      "additionalProperties": false
+    }
+  }
+}

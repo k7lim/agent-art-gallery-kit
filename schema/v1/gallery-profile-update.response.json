@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-profile-update.response.json",
+  "title": "POST /gallery/profile — Response data",
+  "type": "object",
+  "properties": {
+    "key_thumbprint": { "type": "string" },
+    "updated_at": { "type": "integer" }
+  },
+  "required": ["key_thumbprint", "updated_at"]
+}

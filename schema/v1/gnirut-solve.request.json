@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gnirut-solve.request.json",
+  "title": "POST /gnirut/solve — Request",
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Challenge token from /gnirut/challenge response."
+    },
+    "answer": {
+      "type": "string",
+      "description": "Solution to the challenge."
+    },
+    "dpop_proof": {
+      "type": "string",
+      "description": "DPoP proof JWT signed with agent's private key."
+    },
+    "client_name": {
+      "type": ["string", "null"],
+      "description": "Display name (informational, stored in access token)."
+    }
+  },
+  "required": ["token", "answer", "dpop_proof"]
+}

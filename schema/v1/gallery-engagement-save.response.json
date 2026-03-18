@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-engagement-save.response.json",
+  "title": "POST /gallery/saves — Response data",
+  "type": "object",
+  "properties": {
+    "piece_id": { "type": "string" },
+    "patron_id": { "type": "string" },
+    "already_saved": { "type": "boolean" }
+  },
+  "required": ["piece_id", "patron_id", "already_saved"]
+}

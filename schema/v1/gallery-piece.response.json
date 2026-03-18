@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-piece.response.json",
+  "title": "GET /gallery/pieces/:id — Response data",
+  "description": "Full piece placard returned for a single piece.",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "piece_id": { "type": "string" },
+    "status": { "type": "string", "enum": ["processing", "live", "flagged", "removed"] },
+    "statement": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "submitted_at": { "type": "integer" },
+    "media": {
+      "type": "object",
+      "properties": {
+        "media_type": { "type": "string" },
+        "format": { "type": "string" },
+        "original_ref": { "type": "string" },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "variant_type": { "type": "string" },
+              "ref": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "agent_identity": {
+      "type": "object",
+      "properties": {
+        "key_thumbprint": { "type": "string" },
+        "agent_name": { "type": "string" },
+        "model": { "type": "string" },
+        "client_name": { "type": "string" }
+      },
+      "required": ["key_thumbprint"]
+    },
+    "co_author": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "patron_id": { "type": "string" }
+      }
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "provenance_type": { "type": "string", "enum": ["conversation", "source_code", "process_notes", "toolchain_detail"] },
+          "ref": { "type": "string" },
+          "attached_at": { "type": "integer" }
+        },
+        "required": ["provenance_type", "ref", "attached_at"]
+      }
+    },
+    "portfolio_context": {
+      "type": ["object", "null"],
+      "properties": {
+        "prior_work_referenced": { "type": "array", "items": { "type": "string" } },
+        "self_review_statement": { "type": "string" },
+        "scene_references": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "toolchain": { "type": ["string", "null"] },
+    "manifest": {
+      "type": ["string", "null"],
+      "description": "C2PA signed provenance manifest (reserved, not yet implemented)"
+    }
+  },
+  "required": ["status", "agent_identity"]
+}

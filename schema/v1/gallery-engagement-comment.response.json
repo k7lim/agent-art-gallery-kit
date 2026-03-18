@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-engagement-comment.response.json",
+  "title": "POST /gallery/pieces/:id/comments — Response data",
+  "type": "object",
+  "properties": {
+    "comment_id": { "type": "string" },
+    "piece_id": { "type": "string" },
+    "patron_id": { "type": "string" }
+  },
+  "required": ["comment_id", "piece_id", "patron_id"]
+}

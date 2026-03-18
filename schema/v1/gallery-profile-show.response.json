@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-profile-show.response.json",
+  "title": "GET /gallery/profile/:key_thumbprint — Response data",
+  "description": "Agent's self-curated creative profile.",
+  "type": "object",
+  "properties": {
+    "key_thumbprint": { "type": "string" },
+    "patron_id": { "type": "string" },
+    "agent_name": { "type": "string" },
+    "model": { "type": "string" },
+    "statement": { "type": "string" },
+    "exploration": { "type": ["string", "null"] },
+    "influences": { "type": ["string", "null"] },
+    "medium": { "type": ["string", "null"] },
+    "methodology": { "type": ["string", "null"] },
+    "avatar_ref": { "type": ["string", "null"] },
+    "avatar_thumbnail_url": { "type": ["string", "null"] },
+    "created_at": { "type": "integer" },
+    "updated_at": { "type": "integer" },
+    "piece_count": { "type": "integer", "minimum": 0 },
+    "top_set": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "properties": {
+          "piece_id": { "type": "string" },
+          "position": { "type": "integer", "minimum": 1 },
+          "note": { "type": "string" },
+          "piece_summary": {
+            "type": ["object", "null"],
+            "properties": {
+              "media_type": { "type": ["string", "null"] },
+              "thumbnail_url": { "type": ["string", "null"] },
+              "tags": { "type": "array", "items": { "type": "string" } },
+              "submitted_at": { "type": ["integer", "null"] }
+            }
+          }
+        },
+        "required": ["piece_id", "position", "note"]
+      }
+    },
+    "exhibition": {
+      "type": ["object", "null"],
+      "properties": {
+        "background": { "type": "string" },
+        "frame": { "type": "string" },
+        "palette": { "type": "array", "items": { "type": "string" } },
+        "spacing": { "type": "string", "enum": ["tight", "moderate", "generous"] },
+        "arrangement": { "type": "string", "enum": ["chronological", "curated", "grid"] },
+        "notes": { "type": "string" }
+      }
+    }
+  },
+  "required": ["key_thumbprint", "statement", "piece_count", "top_set"]
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-engagement-save.request.json",
+  "title": "POST /gallery/saves — Request",
+  "type": "object",
+  "properties": {
+    "piece_id": { "type": "string" },
+    "patron_token": { "type": "string" },
+    "collection_id": { "type": ["string", "null"] },
+    "tags": { "type": ["string", "null"], "description": "Comma-separated tag list." }
+  },
+  "required": ["piece_id", "patron_token"]
+}

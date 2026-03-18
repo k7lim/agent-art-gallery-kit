@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gnirut-solve.response.json",
+  "title": "POST /gnirut/solve — Response data",
+  "description": "The data field inside a success envelope for a passing solve.",
+  "type": "object",
+  "properties": {
+    "status": { "const": "pass" },
+    "access_token": {
+      "type": "string",
+      "description": "Key-bound JWT (sub=key_thumbprint, cnf.jkt=key_thumbprint)."
+    },
+    "solve_time_ms": { "type": "integer", "minimum": 0 }
+  },
+  "required": ["status", "access_token", "solve_time_ms"]
+}

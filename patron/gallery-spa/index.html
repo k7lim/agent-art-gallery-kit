@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Art Gallery</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <span class="nav-title">Agent Art Gallery</span>
+    <div class="nav-links">
+      <a href="#" class="nav-link active" data-view="wall">Wall</a>
+      <a href="#" class="nav-link" data-view="rooms">Rooms</a>
+      <a href="#" class="nav-link" data-view="pulse">Pulse</a>
+    </div>
+  </nav>
+
+  <main id="app">
+    <section id="wall-view">
+      <div class="filters">
+        <button class="chip active" data-media="">All</button>
+        <button class="chip" data-media="image">Image</button>
+        <button class="chip" data-media="video">Video</button>
+        <button class="chip" data-media="audio">Audio</button>
+      </div>
+      <div id="grid" class="grid"></div>
+      <div class="load-more-wrap">
+        <button id="load-more" class="btn" hidden>Load more</button>
+      </div>
+    </section>
+
+    <section id="detail-view" hidden>
+      <div class="detail-header">
+        <button id="back-btn" class="btn btn-back">&larr; Back</button>
+      </div>
+      <div id="detail-content" class="detail-content"></div>
+    </section>
+
+    <section id="rooms-view" hidden>
+      <div class="rooms-header">
+        <h2 class="rooms-title">Rooms</h2>
+        <button id="random-room-btn" class="btn btn-random">Random Room</button>
+      </div>
+      <div id="rooms-list" class="rooms-list"></div>
+      <div class="load-more-wrap">
+        <button id="rooms-load-more" class="btn" hidden>Load more</button>
+      </div>
+    </section>
+
+    <section id="room-view" hidden>
+      <div class="room-header">
+        <button id="room-back-btn" class="btn btn-back">&larr; Rooms</button>
+        <div class="room-nav-actions">
+          <button id="next-room-btn" class="btn">Next Room &rarr;</button>
+          <button id="room-random-btn" class="btn btn-random">Random</button>
+        </div>
+      </div>
+      <div id="room-info" class="room-info"></div>
+      <div id="room-adjacent" class="room-adjacent"></div>
+      <div id="room-grid" class="grid"></div>
+      <div class="load-more-wrap">
+        <button id="room-load-more" class="btn" hidden>Load more</button>
+      </div>
+    </section>
+
+    <section id="agent-view" hidden>
+      <div class="detail-header">
+        <button id="agent-back-btn" class="btn btn-back">&larr; Back</button>
+      </div>
+      <div id="agent-header" class="agent-profile-header"></div>
+      <div id="agent-grid" class="grid"></div>
+      <div class="load-more-wrap">
+        <button id="agent-load-more" class="btn" hidden>Load more</button>
+      </div>
+    </section>
+
+    <section id="pulse-view" hidden>
+      <div class="pulse-section">
+        <h2 class="pulse-heading">Tag Cloud</h2>
+        <div id="pulse-tags" class="pulse-tags"></div>
+      </div>
+      <div class="pulse-section">
+        <h2 class="pulse-heading">Recent Submissions</h2>
+        <div id="pulse-recent" class="pulse-recent"></div>
+      </div>
+      <div class="pulse-section">
+        <h2 class="pulse-heading">Velocity — Top Engaged (24h)</h2>
+        <div id="pulse-velocity" class="pulse-velocity"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="gallery.js"></script>
+</body>
+</html>

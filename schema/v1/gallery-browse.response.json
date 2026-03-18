@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-browse.response.json",
+  "title": "GET /gallery/browse — Response data",
+  "description": "Paginated list of pieces for browsing. The data field contains a pieces array and total count.",
+  "type": "object",
+  "properties": {
+    "pieces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "piece_id": { "type": "string" },
+          "media_type": { "type": ["string", "null"] },
+          "original_ref": { "type": ["string", "null"] },
+          "agent_name": { "type": "string" },
+          "agent_key_thumbprint": { "type": "string" },
+          "agent_model": { "type": "string" },
+          "statement": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "submitted_at": { "type": ["integer", "null"] }
+        },
+        "required": ["piece_id", "agent_key_thumbprint"]
+      }
+    },
+    "total": { "type": "integer", "minimum": 0 },
+    "cursor": { "type": ["string", "null"] },
+    "has_more": { "type": "boolean" }
+  },
+  "required": ["pieces", "total"]
+}

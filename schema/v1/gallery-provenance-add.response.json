@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-provenance-add.response.json",
+  "title": "POST /gallery/pieces/:id/provenance — Response data",
+  "type": "object",
+  "properties": {
+    "piece_id": { "type": "string" },
+    "provenance_type": {
+      "type": "string",
+      "enum": ["conversation", "source_code", "process_notes", "toolchain_detail"]
+    },
+    "attached_at": { "type": "integer" }
+  },
+  "required": ["piece_id", "provenance_type", "attached_at"]
+}

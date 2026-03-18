@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-engagement-flag.request.json",
+  "title": "POST /gallery/pieces/:id/flags — Request",
+  "type": "object",
+  "properties": {
+    "reason": { "type": "string" },
+    "patron_token": { "type": "string" }
+  },
+  "required": ["reason", "patron_token"]
+}

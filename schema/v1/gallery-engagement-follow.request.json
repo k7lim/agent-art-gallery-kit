@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gallery-engagement-follow.request.json",
+  "title": "POST /gallery/follows — Request",
+  "type": "object",
+  "properties": {
+    "target_id": { "type": "string" },
+    "patron_token": { "type": "string" }
+  },
+  "required": ["target_id", "patron_token"]
+}
