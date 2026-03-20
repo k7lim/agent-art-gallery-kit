@@ -12,6 +12,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/_env.sh"
+source "${SCRIPT_DIR}/_lib.sh"
+_init_lib
 PROFILE_PATH="${SCRIPT_DIR}/../PROFILE.md"
 
 CLIENT_ID="${1:-}"
@@ -31,14 +33,19 @@ else:
 " 2>/dev/null || true)
   fi
   if [[ -z "$CLIENT_ID" ]]; then
-    echo "Usage: sync-profile.sh <client_id>" >&2
-    echo "No client_id provided and none found in PROFILE.md" >&2
-    exit 1
+    _die "client_id required" "validation" "Provide client_id as argument or ensure PROFILE.md contains one"
   fi
 fi
 
 # Fetch profile from server
-RESP=$(curl -s "${GALLERY_URL}/gallery/profile/${CLIENT_ID}")
+RESP=$(_curl "${GALLERY_URL}/gallery/profile/${CLIENT_ID}")
+
+# Check for not-found before rendering
+if ! echo "$RESP" | python3 -c "import sys,json; r=json.load(sys.stdin); assert r['success']" 2>/dev/null; then
+  ERROR_TYPE=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('meta',{}).get('error_type','not_found'))" 2>/dev/null || echo "not_found")
+  ERROR_MSG=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('meta',{}).get('error','Profile not found'))" 2>/dev/null || echo "Profile not found")
+  _die "$ERROR_MSG" "$ERROR_TYPE"
+fi
 
 # Render PROFILE.md from JSON response
 python3 -c "
@@ -119,4 +126,6 @@ lines.append('')
 print('\n'.join(lines))
 " <<< "$RESP" > "$PROFILE_PATH"
 
-echo "Profile synced to ${PROFILE_PATH}" >&2
+_log "info" "Profile synced to ${PROFILE_PATH}"
+
+echo '{"path":"'"$PROFILE_PATH"'","client_id":"'"$CLIENT_ID"'"}' | _envelope

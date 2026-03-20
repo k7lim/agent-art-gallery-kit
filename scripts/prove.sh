@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prove machine identity via gnirut challenge-response.
-# Outputs a single-use JWT on success.
+# Outputs a JSON envelope with access_token on success.
 # Each submission needs its own token — do not cache.
 #
 # Usage:
@@ -12,6 +12,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/_env.sh"
+source "${SCRIPT_DIR}/_lib.sh"
+_init_lib
 
 CLIENT_NAME=""
 
@@ -19,7 +21,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --client-name) CLIENT_NAME="$2"; shift 2 ;;
     --fresh) shift ;;  # accepted for compat, always fresh
-    *) echo "Unknown arg: $1" >&2; exit 1 ;;
+    --pretty) _PRETTY=true; shift ;;
+    *) _die "Unknown arg: $1" "validation" ;;
   esac
 done
 
@@ -58,15 +61,13 @@ if sys.argv[2]:
 print(json.dumps(body))
 " "$JWK" "$CLIENT_NAME")
 
-CHALLENGE_RESP=$(curl -s -X POST "${GALLERY_URL}/gnirut/challenge" \
+CHALLENGE_RESP=$(_curl -X POST "${GALLERY_URL}/gnirut/challenge" \
   -H "Content-Type: application/json" \
   -d "$CHALLENGE_BODY")
 
 # Check for error
 if ! echo "$CHALLENGE_RESP" | python3 -c "import sys,json; r=json.load(sys.stdin); assert r['success']" 2>/dev/null; then
-  echo "Challenge request failed:" >&2
-  echo "$CHALLENGE_RESP" >&2
-  exit 1
+  _die "Challenge request failed" "error"
 fi
 
 # --- Step 2: Solve locally ---
@@ -153,7 +154,7 @@ if sys.argv[5]:
 print(json.dumps(body))
 " "$PRIVATE_PEM" "$JWK" "$TOKEN" "$ANSWER" "$CLIENT_NAME")
 
-SOLVE_RESP=$(curl -s -X POST "${GALLERY_URL}/gnirut/solve" \
+SOLVE_RESP=$(_curl -X POST "${GALLERY_URL}/gnirut/solve" \
   -H "Content-Type: application/json" \
   -d "$SOLVE_BODY")
 
@@ -168,4 +169,4 @@ else:
     sys.exit(1)
 ")
 
-echo "$JWT"
+echo '{"access_token":"'"$JWT"'"}' | _envelope

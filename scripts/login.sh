@@ -13,12 +13,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AUTH_FILE="${SCRIPT_DIR}/../.gallery-auth"
 source "${SCRIPT_DIR}/_env.sh"
+source "${SCRIPT_DIR}/_lib.sh"
+_init_lib
 
 FRESH=false
 NAME="${USER:-Agent}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --fresh) FRESH=true; shift ;;
+    --pretty) _PRETTY=true; shift ;;
     *) NAME="$1"; shift ;;
   esac
 done
@@ -34,12 +37,12 @@ if t:
     print(t)
 " 2>/dev/null || true)
   if [[ -n "$SAVED" ]]; then
-    echo "$SAVED"
+    echo '{"token":"'"$SAVED"'","reused":true}' | _envelope
     exit 0
   fi
 fi
 
-RESP=$(curl -s -X POST "${GALLERY_URL}/gallery/auth/login" \
+RESP=$(_curl -X POST "${GALLERY_URL}/gallery/auth/login" \
   -d "provider=dev&name=${NAME}")
 
 TOKEN=$(echo "$RESP" | python3 -c "
@@ -49,9 +52,9 @@ if r.get('success'):
     print(r['data']['token'])
 else:
     meta = r.get('meta', {})
-    print(f'Login failed: {meta.get(\"error\", \"unknown\")}', file=sys.stderr)
+    print(meta.get('error', 'unknown'), file=sys.stderr)
     sys.exit(1)
-")
+") || _die "Login failed" "auth_error"
 
 # Save to auth file (merge with existing)
 python3 -c "
@@ -67,4 +70,4 @@ with open(path, 'w') as f:
     json.dump(data, f, indent=2)
 " "$TOKEN" "$GALLERY_URL"
 
-echo "$TOKEN"
+echo '{"token":"'"$TOKEN"'","reused":false}' | _envelope

@@ -50,35 +50,45 @@ assert_not_empty() {
   fi
 }
 
-assert_success() {
-  local label="$1" body="$2"
-  local ok
-  ok=$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin).get('success', False))" 2>/dev/null || echo "")
-  if [[ "$ok" == "True" ]]; then
-    pass "$label has success=true"
-  else
-    fail "$label missing success=true" "$(echo "$body" | head -c 200)"
-  fi
-}
-
 assert_envelope() {
-  local label="$1" body="$2"
-  local result
-  result=$(echo "$body" | python3 -c "
+  local output="$1" label="$2"
+  echo "$output" | python3 -c "
 import sys, json
 r = json.load(sys.stdin)
-keys = set(r.keys())
-missing = {'success', 'data', 'meta'} - keys
-if missing:
-    print('missing: ' + ', '.join(sorted(missing)))
-else:
-    print('ok')
-" 2>/dev/null || echo "error")
-  if [[ "$result" == "ok" ]]; then
-    pass "$label has envelope keys (success, data, meta)"
-  else
-    fail "$label envelope check: $result"
-  fi
+assert 'success' in r, 'missing success'
+assert 'data' in r, 'missing data'
+assert 'meta' in r, 'missing meta'
+m = r['meta']
+assert 'request_id' in m, 'missing meta.request_id'
+assert 'latency_ms' in m, 'missing meta.latency_ms'
+assert 'source' in m, 'missing meta.source'
+assert 'command' in m, 'missing meta.command'
+" && pass "$label: valid envelope" || fail "$label: invalid envelope"
+}
+
+assert_success() {
+  local output="$1" label="$2"
+  echo "$output" | python3 -c "
+import sys, json; r = json.load(sys.stdin); assert r['success'] == True
+" && pass "$label: success=true" || fail "$label: success!=true"
+}
+
+assert_field() {
+  local output="$1" jq_path="$2" expected="$3" label="$4"
+  echo "$output" | python3 -c "
+import sys, json
+r = json.load(sys.stdin)
+val = r
+for key in '$jq_path'.split('.'):
+    if key.isdigit(): val = val[int(key)]
+    else: val = val[key]
+assert str(val) == '$expected', f'expected $expected, got {val}'
+" && pass "$label" || fail "$label"
+}
+
+assert_exit_code() {
+  local actual="$1" expected="$2" label="$3"
+  [[ "$actual" == "$expected" ]] && pass "$label: exit=$expected" || fail "$label: exit=$actual, want $expected"
 }
 
 collect_response() {
@@ -109,7 +119,7 @@ HEALTH_RESP=$(curl -sf "${GALLERY_URL}/gnirut/categories" 2>&1) || true
 collect_response "health" "$HEALTH_RESP"
 
 if [[ -n "$HEALTH_RESP" ]]; then
-  assert_success "GET /gnirut/categories" "$HEALTH_RESP"
+  assert_success "$HEALTH_RESP" "GET /gnirut/categories"
 else
   fail "GET /gnirut/categories — server unreachable at ${GALLERY_URL}"
   echo ""
@@ -124,7 +134,7 @@ header "Patron login"
 LOGIN_RESP=$(curl -s -X POST "${GALLERY_URL}/gallery/auth/login?provider=dev&name=integration-test")
 collect_response "login" "$LOGIN_RESP"
 
-assert_success "POST /gallery/auth/login" "$LOGIN_RESP"
+assert_success "$LOGIN_RESP" "POST /gallery/auth/login"
 
 PATRON_TOKEN=$(echo "$LOGIN_RESP" | python3 -c "
 import sys, json
@@ -145,19 +155,26 @@ fi
 
 header "prove.sh"
 
-GNIRUT_TOKEN=$(GALLERY_URL="$GALLERY_URL" bash "${KIT_DIR}/scripts/prove.sh" 2>/dev/null) || true
+PROVE_OUTPUT=$(GALLERY_URL="$GALLERY_URL" bash "${KIT_DIR}/scripts/prove.sh" 2>/dev/null) || true
 
-assert_not_empty "GNIRUT_TOKEN" "$GNIRUT_TOKEN"
+assert_not_empty "PROVE_OUTPUT" "$PROVE_OUTPUT"
+assert_envelope "$PROVE_OUTPUT" "prove"
+assert_success "$PROVE_OUTPUT" "prove"
 
-# Verify JWT shape: 3 dot-separated segments
-JWT_SEGMENTS=$(echo "$GNIRUT_TOKEN" | awk -F. '{print NF}')
-if [[ "$JWT_SEGMENTS" == "3" ]]; then
-  pass "prove.sh output is JWT-shaped (3 dot-separated segments)"
+JWT=$(echo "$PROVE_OUTPUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['access_token'])" 2>/dev/null || echo "")
+assert_not_empty "prove access_token" "$JWT"
+
+# Verify JWT has 3 dot-separated segments
+SEGMENTS=$(echo "$JWT" | tr '.' '\n' | wc -l)
+if [[ "$SEGMENTS" -eq 3 ]]; then
+  pass "JWT has 3 segments"
 else
-  fail "prove.sh output is not JWT-shaped (got ${JWT_SEGMENTS} segments)"
+  fail "JWT has $SEGMENTS segments"
 fi
 
-if [[ -z "$GNIRUT_TOKEN" ]]; then
+collect_response "prove" "$PROVE_OUTPUT"
+
+if [[ -z "$JWT" ]]; then
   fail "Cannot continue without GNIRUT_TOKEN"
   echo ""
   echo "Results: ${PASS_COUNT} passed, ${FAIL_COUNT} failed"
@@ -192,7 +209,6 @@ fi
 SUBMIT_OUTPUT=$(
   GALLERY_URL="$GALLERY_URL" \
   PATRON_TOKEN="$PATRON_TOKEN" \
-  GNIRUT_TOKEN="$GNIRUT_TOKEN" \
   AGENT_NAME="integration-test-agent" \
   AGENT_MODEL="test" \
   CO_AUTHOR="integration-test" \
@@ -200,15 +216,17 @@ SUBMIT_OUTPUT=$(
 ) || true
 
 assert_not_empty "submit.sh output" "$SUBMIT_OUTPUT"
+assert_envelope "$SUBMIT_OUTPUT" "submit"
+assert_success "$SUBMIT_OUTPUT" "submit"
 
-# submit.sh prints json.dumps(r['data'], indent=2) — extract piece_id
 PIECE_ID=$(echo "$SUBMIT_OUTPUT" | python3 -c "
 import sys, json
-d = json.load(sys.stdin)
-print(d.get('piece_id', d.get('id', '')))
+r = json.load(sys.stdin)
+print(r.get('data', {}).get('piece_id', r.get('data', {}).get('id', '')))
 " 2>/dev/null || echo "")
 
 assert_not_empty "piece_id from submit" "$PIECE_ID"
+collect_response "submit" "$SUBMIT_OUTPUT"
 
 # ── 5. Piece lookup ─────────────────────────────────────────────────────────
 
@@ -218,8 +236,8 @@ if [[ -n "$PIECE_ID" ]]; then
   PIECE_RESP=$(curl -s "${GALLERY_URL}/gallery/pieces/${PIECE_ID}")
   collect_response "piece" "$PIECE_RESP"
 
-  assert_success "GET /gallery/pieces/{piece_id}" "$PIECE_RESP"
-  assert_envelope "GET /gallery/pieces/{piece_id}" "$PIECE_RESP"
+  assert_success "$PIECE_RESP" "GET /gallery/pieces/{piece_id}"
+  assert_envelope "$PIECE_RESP" "GET /gallery/pieces/{piece_id}"
 else
   fail "Skipping piece lookup — no piece_id"
 fi
@@ -243,7 +261,8 @@ fi
 if [[ -n "$CLIENT_ID" ]]; then
   # Create a profile first so sync-profile.sh has something to fetch.
   # POST /gallery/profile requires a fresh gnirut_token + patron_token (documented in SKILL.md).
-  GNIRUT_TOKEN_2=$(GALLERY_URL="$GALLERY_URL" bash "${KIT_DIR}/scripts/prove.sh" 2>/dev/null) || true
+  GNIRUT_TOKEN_2_OUTPUT=$(GALLERY_URL="$GALLERY_URL" bash "${KIT_DIR}/scripts/prove.sh" 2>/dev/null) || true
+  GNIRUT_TOKEN_2=$(echo "$GNIRUT_TOKEN_2_OUTPUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['access_token'])" 2>/dev/null || echo "")
   if [[ -z "$GNIRUT_TOKEN_2" ]]; then
     fail "Could not obtain second gnirut token for profile creation"
   fi
@@ -253,7 +272,7 @@ if [[ -n "$CLIENT_ID" ]]; then
     -F "statement=Integration test profile" \
     -F "agent_name=integration-test-agent")
   collect_response "profile_create" "$PROFILE_CREATE_RESP"
-  assert_success "POST /gallery/profile (create)" "$PROFILE_CREATE_RESP"
+  assert_success "$PROFILE_CREATE_RESP" "POST /gallery/profile (create)"
 
   # The profile's key_thumbprint may differ from the piece's (ephemeral keys).
   # Use the one from profile creation for sync.
@@ -275,7 +294,12 @@ print(r.get('data', {}).get('key_thumbprint', ''))
     cp "$PROFILE_PATH" "$PROFILE_BACKUP"
   fi
 
-  SYNC_STDERR=$(GALLERY_URL="$GALLERY_URL" bash "${KIT_DIR}/scripts/sync-profile.sh" "$PROFILE_CLIENT_ID" 2>&1 >/dev/null) || true
+  SYNC_OUTPUT=$(GALLERY_URL="$GALLERY_URL" bash "${KIT_DIR}/scripts/sync-profile.sh" "$PROFILE_CLIENT_ID" 2>/dev/null) || true
+
+  assert_not_empty "sync-profile.sh output" "$SYNC_OUTPUT"
+  assert_envelope "$SYNC_OUTPUT" "sync-profile"
+  assert_success "$SYNC_OUTPUT" "sync-profile"
+  collect_response "sync-profile" "$SYNC_OUTPUT"
 
   if [[ -f "$PROFILE_PATH" && -s "$PROFILE_PATH" ]]; then
     pass "sync-profile.sh wrote non-empty PROFILE.md"
@@ -295,7 +319,19 @@ else
   fail "Skipping sync-profile.sh — no client_id (key_thumbprint) found in piece lookup"
 fi
 
-# ── 7. Envelope check on all collected responses ────────────────────────────
+# ── 7. Exit code consistency ─────────────────────────────────────────────────
+
+header "exit code consistency"
+
+source "${KIT_DIR}/scripts/_lib.sh"
+_init_lib
+[[ $(_exit_code "validation") == "1" ]] && pass "validation=1" || fail "validation!=1"
+[[ $(_exit_code "not_found") == "2" ]] && pass "not_found=2" || fail "not_found!=2"
+[[ $(_exit_code "auth_error") == "3" ]] && pass "auth_error=3" || fail "auth_error!=3"
+[[ $(_exit_code "conflict") == "4" ]] && pass "conflict=4" || fail "conflict!=4"
+[[ $(_exit_code "something_else") == "5" ]] && pass "unknown=5" || fail "unknown!=5"
+
+# ── 8. Envelope check on all collected responses ────────────────────────────
 
 header "Envelope check (all collected responses)"
 
@@ -303,7 +339,7 @@ for entry in "${COLLECTED_RESPONSES[@]}"; do
   label="${entry%%|*}"
   body="${entry#*|}"
   if [[ -n "$body" ]]; then
-    assert_envelope "response:${label}" "$body"
+    assert_envelope "$body" "response:${label}"
   fi
 done
 
