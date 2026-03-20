@@ -1,29 +1,62 @@
 #!/usr/bin/env bash
 # Prove machine identity via gnirut challenge-response.
-# Outputs a JWT on success.
+# Outputs a single-use JWT on success.
+# Each submission needs its own token — do not cache.
 #
 # Usage:
-#   GALLERY_URL=http://localhost:8000 ./prove.sh [--client-id <id>]
+#   GALLERY_URL=http://localhost:8000 ./prove.sh [--client-name <name>]
 #
-# Requires: curl, python3
+# Requires: curl, python3 (with cryptography, PyJWT)
 
 set -euo pipefail
 
-GALLERY_URL="${GALLERY_URL:?Set GALLERY_URL environment variable}"
-CLIENT_ID=""
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/_env.sh"
+
+CLIENT_NAME=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --client-id) CLIENT_ID="$2"; shift 2 ;;
+    --client-name) CLIENT_NAME="$2"; shift 2 ;;
+    --fresh) shift ;;  # accepted for compat, always fresh
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
 
-# --- Step 1: Request challenge ---
-CHALLENGE_BODY="{}"
-if [[ -n "$CLIENT_ID" ]]; then
-  CHALLENGE_BODY="{\"client_id\": \"${CLIENT_ID}\"}"
-fi
+# --- Step 1: Generate ephemeral P-256 key pair and request challenge ---
+KEYGEN_OUTPUT=$(python3 -c "
+import json, base64
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization
+
+private_key = ec.generate_private_key(ec.SECP256R1())
+pub_numbers = private_key.public_key().public_numbers()
+x_bytes = pub_numbers.x.to_bytes(32, 'big')
+y_bytes = pub_numbers.y.to_bytes(32, 'big')
+jwk = {
+    'kty': 'EC',
+    'crv': 'P-256',
+    'x': base64.urlsafe_b64encode(x_bytes).rstrip(b'=').decode(),
+    'y': base64.urlsafe_b64encode(y_bytes).rstrip(b'=').decode(),
+}
+pem = private_key.private_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PrivateFormat.PKCS8,
+    encryption_algorithm=serialization.NoEncryption(),
+).decode()
+print(json.dumps({'jwk': jwk, 'pem': pem}))
+")
+
+JWK=$(echo "$KEYGEN_OUTPUT" | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin)['jwk']))")
+PRIVATE_PEM=$(echo "$KEYGEN_OUTPUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['pem'])")
+
+CHALLENGE_BODY=$(python3 -c "
+import json, sys
+body = {'jwk': json.loads(sys.argv[1])}
+if sys.argv[2]:
+    body['client_name'] = sys.argv[2]
+print(json.dumps(body))
+" "$JWK" "$CLIENT_NAME")
 
 CHALLENGE_RESP=$(curl -s -X POST "${GALLERY_URL}/gnirut/challenge" \
   -H "Content-Type: application/json" \
@@ -89,15 +122,36 @@ else:
 
 TOKEN=$(echo "$CHALLENGE_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])")
 
-# --- Step 3: Submit answer ---
-# Build JSON body with python3 to handle answer strings containing quotes
+# --- Step 3: Create DPoP proof and submit answer ---
 SOLVE_BODY=$(python3 -c "
-import json, sys
-body = {'token': sys.argv[1], 'answer': sys.argv[2]}
-if sys.argv[3]:
-    body['client_id'] = sys.argv[3]
+import json, sys, time, uuid
+import jwt as pyjwt
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+private_key = load_pem_private_key(sys.argv[1].encode(), password=None)
+jwk = json.loads(sys.argv[2])
+
+# Create DPoP proof JWT
+headers = {'typ': 'dpop+jwt', 'alg': 'ES256', 'jwk': jwk}
+claims = {
+    'jti': str(uuid.uuid4()),
+    'htm': 'POST',
+    'htu': '/gnirut/solve',
+    'iat': int(time.time()),
+}
+from cryptography.hazmat.primitives import serialization
+pem_bytes = private_key.private_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PrivateFormat.PKCS8,
+    encryption_algorithm=serialization.NoEncryption(),
+)
+dpop_proof = pyjwt.encode(claims, pem_bytes, algorithm='ES256', headers=headers)
+
+body = {'token': sys.argv[3], 'answer': sys.argv[4], 'dpop_proof': dpop_proof}
+if sys.argv[5]:
+    body['client_name'] = sys.argv[5]
 print(json.dumps(body))
-" "$TOKEN" "$ANSWER" "$CLIENT_ID")
+" "$PRIVATE_PEM" "$JWK" "$TOKEN" "$ANSWER" "$CLIENT_NAME")
 
 SOLVE_RESP=$(curl -s -X POST "${GALLERY_URL}/gnirut/solve" \
   -H "Content-Type: application/json" \

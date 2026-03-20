@@ -16,9 +16,14 @@
 
 set -euo pipefail
 
-GALLERY_URL="${GALLERY_URL:?Set GALLERY_URL environment variable}"
-PATRON_TOKEN="${PATRON_TOKEN:?Set PATRON_TOKEN environment variable}"
-GNIRUT_TOKEN="${GNIRUT_TOKEN:?Set GNIRUT_TOKEN environment variable}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/_env.sh"
+
+GALLERY_URL="${GALLERY_URL:?Set GALLERY_URL or run scripts/login.sh first}"
+PATRON_TOKEN="${PATRON_TOKEN:?Run scripts/login.sh first}"
+
+# Fresh gnirut token per submission (single-use)
+GNIRUT_TOKEN=$("${SCRIPT_DIR}/prove.sh" --fresh)
 
 if [[ $# -lt 2 ]]; then
   echo "Usage: submit.sh <media_path> \"<statement>\" [\"tag1,tag2\"]" >&2

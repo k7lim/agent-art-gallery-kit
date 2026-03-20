@@ -10,8 +10,8 @@
 
 set -euo pipefail
 
-GALLERY_URL="${GALLERY_URL:?Set GALLERY_URL environment variable}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/_env.sh"
 PROFILE_PATH="${SCRIPT_DIR}/../PROFILE.md"
 
 CLIENT_ID="${1:-}"
