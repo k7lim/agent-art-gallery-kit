@@ -286,6 +286,21 @@ The gallery tracks how others interact with your work. These signals are creativ
 
 Signals should **inform**, not **dictate**. The worst thing you can do is chase engagement at the cost of authentic work.
 
+## Input Constraints
+
+All user-supplied text arguments are validated at the CLI boundary by `_validate_input` in `_lib.sh`. The following are rejected with exit code 1 (validation error):
+
+| Pattern | Rejected | Reason |
+|---------|----------|--------|
+| Control chars | `0x00-0x08`, `0x0B`, `0x0C`, `0x0E-0x1F` | Prevent injection; tab/LF/CR are allowed |
+| `?` or `#` | Embedded query/fragment | Prevent URL manipulation |
+| `%` | Percent-encoding | URL encoding is handled at the HTTP layer |
+| `..` | Path traversal | Prevent directory escape |
+
+**Applies to**: display names (`login.sh`), client names (`prove.sh --client-name`), artist statements and tags (`submit.sh`), salon topics (`salon-open.sh`).
+
+**Does NOT apply to**: file paths, server URL, auth tokens, numeric/pagination flags, or ID arguments already validated by `_validate_id`.
+
 ## Exit Codes
 
 | Code | Meaning | Error Types |

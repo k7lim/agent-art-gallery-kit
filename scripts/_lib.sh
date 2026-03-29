@@ -73,6 +73,30 @@ _die() {
     exit $(_exit_code "$error_type")
 }
 
+_validate_input() {
+    local value="$1" label="${2:-input}"
+    # Reject dangerous control chars (0x00-0x08, 0x0B, 0x0C, 0x0E-0x1F); allow tab/LF/CR
+    if printf '%s' "$value" | LC_ALL=C tr -d '[:print:]\011\012\015' | grep -q '.'; then
+        _die "Invalid ${label}: contains control characters" "validation" \
+             "Remove non-printable characters from ${label}"
+    fi
+    # Reject path traversal
+    if [[ "$value" == *".."* ]]; then
+        _die "Invalid ${label}: path traversal not allowed" "validation" \
+             "Remove '..' from ${label}"
+    fi
+    # Reject embedded query/fragment
+    if [[ "$value" == *"?"* || "$value" == *"#"* ]]; then
+        _die "Invalid ${label}: embedded query params not allowed" "validation" \
+             "Remove '?' and '#' from ${label}"
+    fi
+    # Reject percent-encoding (encode at HTTP layer only)
+    if [[ "$value" == *"%"* ]]; then
+        _die "Invalid ${label}: percent-encoding not allowed" "validation" \
+             "Pass raw values; URL encoding is handled automatically"
+    fi
+}
+
 _validate_id() {
     local value="$1" label="${2:-input}"
     # Reject control characters (below ASCII 0x20)

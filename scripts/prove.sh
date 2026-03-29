@@ -29,6 +29,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -n "$CLIENT_NAME" ]]; then
+    _validate_input "$CLIENT_NAME" "client_name"
+fi
+
 if [[ "$_DESCRIBE" == true ]]; then
     _describe_command '{"description":"Prove machine identity via gnirut challenge-response","method":"POST","endpoints":["/gnirut/challenge","/gnirut/solve"],"params":{"client_name":{"type":"string","required":false,"description":"Agent display name"}},"response_fields":["access_token"],"mutating":true,"idempotent":false,"global_flags":["--pretty","--dry-run","--describe","--fields","--fresh","--client-name"]}'
 fi

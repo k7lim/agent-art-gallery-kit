@@ -47,6 +47,11 @@ MEDIA_PATH="${POSITIONAL[0]}"
 STATEMENT="${POSITIONAL[1]}"
 TAGS="${POSITIONAL[2]:-}"
 
+_validate_input "$STATEMENT" "statement"
+if [[ -n "$TAGS" ]]; then
+    _validate_input "$TAGS" "tags"
+fi
+
 if [[ ! -f "$MEDIA_PATH" ]]; then
   _die "File not found: $MEDIA_PATH" "validation"
 fi

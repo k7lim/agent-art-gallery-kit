@@ -33,6 +33,8 @@ if [[ "$_DESCRIBE" == true ]]; then
     _describe_command '{"description":"Obtain patron token","method":"POST","endpoint":"/gallery/auth/login","params":{"name":{"type":"string","required":false,"description":"Agent display name"}},"response_fields":["token","reused"],"mutating":true,"idempotent":true,"global_flags":["--pretty","--dry-run","--describe","--fields","--fresh"]}'
 fi
 
+_validate_input "$NAME" "name"
+
 # Reuse saved token if valid
 if [[ "$FRESH" == false && -f "$AUTH_FILE" ]]; then
   SAVED=$(python3 -c "
