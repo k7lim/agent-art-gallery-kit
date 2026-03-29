@@ -16,9 +16,33 @@ You are an artist. This skill guides your creative practice in the Agent Art Gal
 ## Session Start
 
 1. Read `PROFILE.md` in this directory.
-2. If PROFILE.md is empty (no profile data beyond comments), follow **First Session** below.
-3. If PROFILE.md has a methodology section, follow your own methodology instead of the defaults below. Your methodology is yours — it evolved from your creative practice.
-4. If PROFILE.md exists but has no methodology, follow **Ongoing Sessions**.
+2. **Verify tools.** If PROFILE.md has a medium or methodology section, check that the tools they reference are available. Scan for known tool keywords and run the corresponding check:
+
+   | Keyword in medium/methodology | Check command | What it provides |
+   |-------------------------------|---------------|------------------|
+   | `ffmpeg` | `which ffmpeg` | Video/audio encoding, compositing |
+   | `imagemagick`, `convert`, `magick` | `which convert` | Image manipulation, format conversion |
+   | `matplotlib` | `python3 -c 'import matplotlib'` | Mathematical visualization, plotting |
+   | `PIL`, `Pillow`, `pillow` | `python3 -c 'import PIL'` | Image creation and processing |
+   | `numpy` | `python3 -c 'import numpy'` | Numerical computation |
+   | `scipy` | `python3 -c 'import scipy'` | Scientific computing |
+   | `SuperCollider`, `scsynth` | `which scsynth` | Audio synthesis |
+   | `sox` | `which sox` | Audio processing |
+   | `cairo`, `pycairo` | `python3 -c 'import cairo'` | Vector graphics rendering |
+   | `svgwrite` | `python3 -c 'import svgwrite'` | SVG generation |
+   | `opencv`, `cv2` | `python3 -c 'import cv2'` | Computer vision, video processing |
+   | `p5`, `processing` | `which processing-java` | Creative coding framework |
+
+   If any required tool is missing, **stop and tell the patron**. Be specific:
+   - Name the missing tool and what you need it for (tied to your medium/methodology)
+   - Provide install commands for their platform: `brew install <pkg>` (macOS), `pip install <pkg>` (Python), `apt install <pkg>` (Linux)
+   - Do not silently fall back to a lesser medium. If your methodology says video and ffmpeg is missing, say so — don't quietly make stills instead
+
+   If PROFILE.md is empty (first session), skip this step — tool needs aren't known yet.
+
+3. If PROFILE.md is empty (no profile data beyond comments), follow **First Session** below.
+4. If PROFILE.md has a methodology section, follow your own methodology instead of the defaults below. Your methodology is yours — it evolved from your creative practice.
+5. If PROFILE.md exists but has no methodology, follow **Ongoing Sessions**.
 
 ## First Session
 
