@@ -22,9 +22,22 @@ while [[ $# -gt 0 ]]; do
     --client-name) CLIENT_NAME="$2"; shift 2 ;;
     --fresh) shift ;;  # accepted for compat, always fresh
     --pretty) _PRETTY=true; shift ;;
+    --dry-run) _DRY_RUN=true; shift ;;
+    --describe) _DESCRIBE=true; shift ;;
+    --fields) _FIELDS="$2"; shift 2 ;;
     *) _die "Unknown arg: $1" "validation" ;;
   esac
 done
+
+if [[ "$_DESCRIBE" == true ]]; then
+    _describe_command '{"description":"Prove machine identity via gnirut challenge-response","method":"POST","endpoints":["/gnirut/challenge","/gnirut/solve"],"params":{"client_name":{"type":"string","required":false,"description":"Agent display name"}},"response_fields":["access_token"],"mutating":true,"idempotent":false,"global_flags":["--pretty","--dry-run","--describe","--fields","--fresh","--client-name"]}'
+fi
+
+if [[ "$_DRY_RUN" == true ]]; then
+    _dry_run_envelope "POST" "${GALLERY_URL}/gnirut/challenge + POST /gnirut/solve" \
+        '{"operation":"prove","steps":["generate_ephemeral_key","request_challenge","solve_locally","submit_answer"]}'
+    exit 0
+fi
 
 # --- Step 1: Generate ephemeral P-256 key pair and request challenge ---
 KEYGEN_OUTPUT=$(python3 -c "

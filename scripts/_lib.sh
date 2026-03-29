@@ -9,6 +9,9 @@ _init_lib() {
     _REQUEST_ID=$(python3 -c "import uuid; print(uuid.uuid4())")
     _COMMAND="${_COMMAND:-$(basename "$0" .sh)}"
     _PRETTY=false
+    _DRY_RUN=false
+    _DESCRIBE=false
+    _FIELDS=""
 }
 
 _envelope() {
@@ -70,19 +73,75 @@ _die() {
     exit $(_exit_code "$error_type")
 }
 
+_validate_id() {
+    local value="$1" label="${2:-input}"
+    # Reject control characters (below ASCII 0x20)
+    if printf '%s' "$value" | LC_ALL=C tr -d '[:print:]' | grep -q '.'; then
+        _die "Invalid ${label}: contains control characters" "validation" \
+             "Remove non-printable characters from ${label}"
+    fi
+    # Reject path traversal
+    if [[ "$value" == *".."* || "$value" == *"/"* ]]; then
+        _die "Invalid ${label}: path traversal not allowed" "validation" \
+             "Remove '..' and '/' from ${label}"
+    fi
+    # Reject embedded query params (? and #)
+    if [[ "$value" == *"?"* || "$value" == *"#"* ]]; then
+        _die "Invalid ${label}: embedded query params not allowed" "validation" \
+             "Remove '?' and '#' from ${label}"
+    fi
+    # Reject percent-encoding (encode at HTTP layer only)
+    if [[ "$value" == *"%"* ]]; then
+        _die "Invalid ${label}: percent-encoding not allowed" "validation" \
+             "Pass raw values; URL encoding is handled automatically"
+    fi
+}
+
 _parse_flags() {
     local args=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --pretty) _PRETTY=true; shift ;;
+            --dry-run) _DRY_RUN=true; shift ;;
+            --describe) _DESCRIBE=true; shift ;;
+            --fields) _FIELDS="$2"; shift 2 ;;
             *) args+=("$1"); shift ;;
         esac
     done
     echo "${args[@]:-}"
 }
 
+_describe_command() {
+    local schema="$1"
+    echo "$schema" | _envelope "$_COMMAND" '{"describe":true}'
+    exit 0
+}
+
+_dry_run_envelope() {
+    local method="$1" url="$2" payload="${3:-"{}"}"
+    _DR_METHOD="$method" _DR_URL="$url" _DR_PAYLOAD="$payload" python3 -c "
+import json, os
+data = {'dry_run': True, 'method': os.environ['_DR_METHOD'],
+        'url': os.environ['_DR_URL'], 'payload': json.loads(os.environ['_DR_PAYLOAD'])}
+print(json.dumps(data, separators=(',',':')))
+" | _envelope "$_COMMAND" '{"dry_run":true}'
+}
+
 _output() {
-    if [[ "$_PRETTY" == true ]]; then
+    if [[ -n "$_FIELDS" ]]; then
+        _F_FIELDS="$_FIELDS" _F_PRETTY="$_PRETTY" python3 -c "
+import json, sys, os
+obj = json.load(sys.stdin)
+fields = set(os.environ['_F_FIELDS'].split(','))
+if obj.get('data') and isinstance(obj['data'], dict):
+    obj['data'] = {k: v for k, v in obj['data'].items() if k in fields}
+elif obj.get('data') and isinstance(obj['data'], list):
+    obj['data'] = [{k: v for k, v in item.items() if k in fields} for item in obj['data']]
+pretty = os.environ.get('_F_PRETTY') == 'true'
+print(json.dumps(obj, indent=2 if pretty else None,
+    separators=None if pretty else (',',':')))
+"
+    elif [[ "$_PRETTY" == true ]]; then
         python3 -m json.tool
     else
         cat

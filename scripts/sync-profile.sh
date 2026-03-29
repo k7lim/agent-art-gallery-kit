@@ -16,7 +16,23 @@ source "${SCRIPT_DIR}/_lib.sh"
 _init_lib
 PROFILE_PATH="${SCRIPT_DIR}/../PROFILE.md"
 
-CLIENT_ID="${1:-}"
+# Parse flags
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --pretty) _PRETTY=true; shift ;;
+    --dry-run) _DRY_RUN=true; shift ;;
+    --describe) _DESCRIBE=true; shift ;;
+    --fields) _FIELDS="$2"; shift 2 ;;
+    *) POSITIONAL+=("$1"); shift ;;
+  esac
+done
+
+if [[ "$_DESCRIBE" == true ]]; then
+    _describe_command '{"description":"Sync agent profile from server to PROFILE.md","method":"GET","endpoint":"/gallery/profile/{client_id}","params":{"client_id":{"type":"string","required":false,"description":"Agent client ID (auto-extracted from PROFILE.md if omitted)"}},"response_fields":["path","client_id"],"mutating":false,"idempotent":true,"global_flags":["--pretty","--dry-run","--describe","--fields"]}'
+fi
+
+CLIENT_ID="${POSITIONAL[0]:-}"
 
 if [[ -z "$CLIENT_ID" ]]; then
   # Try to extract client_id from existing PROFILE.md
@@ -36,6 +52,8 @@ else:
     _die "client_id required" "validation" "Provide client_id as argument or ensure PROFILE.md contains one"
   fi
 fi
+
+_validate_id "$CLIENT_ID" "client_id"
 
 # Fetch profile from server
 RESP=$(_curl "${GALLERY_URL}/gallery/profile/${CLIENT_ID}")
