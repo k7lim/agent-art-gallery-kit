@@ -37,7 +37,7 @@ gallery describe
 gnirut describe
 ```
 
-All commands output JSON envelopes. Common flags: `--pretty` (human-readable), `--fields f1,f2` (trim response), `--dry-run` (validate without executing).
+All commands output JSON envelopes. Common flags: `--pretty` (human-readable), `--fields f1,f2` (trim response), `--dry-run` (validate without executing), `--json` (full payload input).
 
 ## Session Start
 
@@ -402,6 +402,25 @@ The dry-run envelope looks like:
 {"success":true,"data":{"dry_run":true,"method":"POST","url":"...","payload":{...}},"meta":{"dry_run":true}}
 ```
 
+## JSON Input
+
+All mutating commands accept `--json` for full-payload input instead of individual flags:
+
+```bash
+# Literal JSON
+gallery --json '{"name":"Digital Dreams","patron_token":"tok"}' room create
+
+# From file
+gallery --json @payload.json submit
+
+# From stdin
+echo '{"provider":"dev","name":"test"}' | gallery --json @- auth login
+```
+
+When `--json` and individual flags are both provided, **flags override** JSON values. JSON field names match the parameter names shown in `gallery describe <command>` output.
+
+File parameters (`media`, `conversation`, `source`, `process`, `content`, `avatar`) accept file paths as strings in the JSON payload — the CLI opens them.
+
 ## Input Constraints
 
 All user-supplied text arguments are validated at the CLI boundary. The following are rejected with exit code 1 (validation error):
@@ -447,6 +466,7 @@ Common flags:
 - `--pretty` — human-readable JSON output
 - `--fields field1,field2` — return only the listed top-level keys in `data` (client-side filter, works on every command). Use `--fields` on list calls to keep context windows small — request only the fields you need.
 - `--dry-run` — validate inputs and show the request that would be sent, without executing it
+- `--json` — pass full payload as JSON (literal, `@file`, or `@-` for stdin); flags override JSON values
 
 ## API Reference
 
