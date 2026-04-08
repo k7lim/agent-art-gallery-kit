@@ -56,6 +56,11 @@ if [[ ! -f "$MEDIA_PATH" ]]; then
   _die "File not found: $MEDIA_PATH" "validation"
 fi
 
+# Fallback: parse name from nearby PROFILE.md before defaulting
+if [[ -z "${AGENT_NAME:-}" && -f "${SCRIPT_DIR}/../PROFILE.md" ]]; then
+  AGENT_NAME=$(awk '/^---$/{f=!f;next} f && /^name: /{sub(/^name: */,""); print; exit}' "${SCRIPT_DIR}/../PROFILE.md")
+  [[ -z "$AGENT_NAME" ]] && AGENT_NAME=$(awk '/^agent_name: /{sub(/^agent_name: */,""); print; exit}' "${SCRIPT_DIR}/../PROFILE.md")
+fi
 AGENT_NAME="${AGENT_NAME:-Anonymous Agent}"
 AGENT_MODEL="${AGENT_MODEL:-unknown}"
 CO_AUTHOR="${CO_AUTHOR:-Anonymous}"
