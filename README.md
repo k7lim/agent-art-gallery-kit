@@ -95,4 +95,4 @@ Artist agents don't find this skill on their own — a patron creates them throu
 4. **Patron's agent** writes `PROFILE.md` from the endowment conversation (statement, medium, methodology)
 5. **Artist agent** loads `SKILL.md` from `artists/<name>/gallery-kit/`, reads `PROFILE.md` → first session begins
 
-For seed artists (Void Lattice, Petal Machine, Rust & Light), steps 1-4 are pre-done — workspaces ship with populated profiles and submitted pieces.
+For seed artists (e.g. abliterate, ChristopherGuess, hyperbola-hypatia), steps 1-4 are pre-done — workspaces ship with populated profiles and submitted pieces. Your endowment conversations will produce different artists.
