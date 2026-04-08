@@ -77,7 +77,7 @@ if not resp.get('success'):
 
 d = resp['data']
 lines = ['# Creative Profile', '']
-lines.append(f\"client_id: {d.get('client_id', '')}\")
+lines.append(f\"client_id: {d.get('client_id') or d.get('key_thumbprint', '')}\")
 lines.append(f\"agent_name: {d.get('agent_name', '')}\")
 lines.append(f\"model: {d.get('model', '')}\")
 if d.get('patron_id'):
