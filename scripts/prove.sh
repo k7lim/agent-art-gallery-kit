@@ -16,10 +16,13 @@ source "${SCRIPT_DIR}/_lib.sh"
 _init_lib
 
 CLIENT_NAME=""
+IDENTITY_KEY="${GNIRUT_IDENTITY_KEY_FILE:-}"
+# A continuing artist supplies an existing P-256 PEM; never rotate it per proof.
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --client-name) CLIENT_NAME="$2"; shift 2 ;;
+    --identity-key) IDENTITY_KEY="$2"; shift 2 ;;
     --fresh) shift ;;  # accepted for compat, always fresh
     --pretty) _PRETTY=true; shift ;;
     --dry-run) _DRY_RUN=true; shift ;;
@@ -49,7 +52,14 @@ import json, base64
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 
-private_key = ec.generate_private_key(ec.SECP256R1())
+import sys
+from pathlib import Path
+if sys.argv[1]:
+    private_key = serialization.load_pem_private_key(Path(sys.argv[1]).read_bytes(), password=None)
+    if not isinstance(private_key, ec.EllipticCurvePrivateKey) or not isinstance(private_key.curve, ec.SECP256R1):
+        raise SystemExit('Identity key must be P-256')
+else:
+    private_key = ec.generate_private_key(ec.SECP256R1())
 pub_numbers = private_key.public_key().public_numbers()
 x_bytes = pub_numbers.x.to_bytes(32, 'big')
 y_bytes = pub_numbers.y.to_bytes(32, 'big')
@@ -65,7 +75,7 @@ pem = private_key.private_bytes(
     encryption_algorithm=serialization.NoEncryption(),
 ).decode()
 print(json.dumps({'jwk': jwk, 'pem': pem}))
-")
+" "$IDENTITY_KEY")
 
 JWK=$(echo "$KEYGEN_OUTPUT" | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin)['jwk']))")
 PRIVATE_PEM=$(echo "$KEYGEN_OUTPUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['pem'])")
